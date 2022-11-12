@@ -1,7 +1,7 @@
 {
   "name": "proceduralterrain",
   "version": "0.1.0",
-  "homepage": "http://vexus4vx.github.io/proceduralterrain",
+  "homepage": "http://vexus4vx.github.io/proceduralterrain/",
   "private": true,
   "dependencies": {
     "@react-three/drei": "^9.37.1",
