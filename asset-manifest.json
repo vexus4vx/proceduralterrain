@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/proceduralterrain/static/css/main.e6c13ad2.css",
+    "main.js": "/proceduralterrain/static/js/main.844520f5.js",
+    "static/js/787.78250553.chunk.js": "/proceduralterrain/static/js/787.78250553.chunk.js",
+    "index.html": "/proceduralterrain/index.html",
+    "main.e6c13ad2.css.map": "/proceduralterrain/static/css/main.e6c13ad2.css.map",
+    "main.844520f5.js.map": "/proceduralterrain/static/js/main.844520f5.js.map",
+    "787.78250553.chunk.js.map": "/proceduralterrain/static/js/787.78250553.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.844520f5.js"
+  ]
+}
