@@ -1,18 +1,16 @@
 import React from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Sky } from '@react-three/drei';
 
 import { FrontSide } from 'three';
 import { perlin3, perlin2 } from '../Logic/noise';
 import { random } from '../Logic/vxNoise';
 
-export default function Simulation({position, cameraRef, canvasRef, ...props}) {
-
-  // console.log(cameraRef)
+export default function Simulation({position, ...props}) {
 
   return (
       <group position={position || [0,0,0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <TerrainChunkManagerV4 {...{ cameraRef, canvasRef, depth: 4 }} />
+        <TerrainChunkManagerV4 {...{ depth: 4 }} />
       </group>
   );
 }
@@ -198,10 +196,8 @@ const color = {
   snow2 : [0.63, 0.71, 0.87]
 }
 
+// it feels like this keeps on recalculation - debug
 function TerrainChunk({ width, scale, seed, meshProps }) {
-    const meshRef = React.useRef()
-    const positionRef = React.useRef()
-    const colourRef = React.useRef()
     const size = width * scale;
 
     let { positions, colors, normals, indices } = React.useMemo(() => {
@@ -231,16 +227,16 @@ function TerrainChunk({ width, scale, seed, meshProps }) {
             normals: new Float32Array(normals),
             indices: new Uint16Array(indices)
         }
-    }, [width, scale])
+    }, [])
 
-    return <mesh ref={meshRef} {...meshProps} >
+    return <mesh {...meshProps} >
         <bufferGeometry>
-            <bufferAttribute ref={positionRef} attach='attributes-position' array={positions} count={positions.length / 3} itemSize={3} />
-            <bufferAttribute ref={colourRef} attach='attributes-color' array={colors} count={colors.length / 3} itemSize={3} />
+            <bufferAttribute attach='attributes-position' array={positions} count={positions.length / 3} itemSize={3} />
+            <bufferAttribute attach='attributes-color' array={colors} count={colors.length / 3} itemSize={3} />
             <bufferAttribute attach='attributes-normal' array={normals} count={normals.length / 3} itemSize={3} />
             <bufferAttribute attach="index" array={indices} count={indices.length} itemSize={1} />
         </bufferGeometry>
-        <meshStandardMaterial vertexColors {...{ wireframe: false, color: 0xFFFF00, side: FrontSide }} />
+        <meshStandardMaterial vertexColors {...{ side: FrontSide }} />
     </mesh>
 }
 
@@ -257,7 +253,7 @@ const ofs = [
 ] // 1, 1+3, 4+9, 13+27, 40+81, 120+(3**5) ...
 
 // zustand ?
-function TerrainChunkManagerV4({ cameraRef, seed = 14659, width = 200, depth = 5 }){
+function TerrainChunkManagerV4({ seed = 14659, width = 200, depth = 5 }){
   const [lastCalculatedPosition, setLastCalculatedPosition] = React.useState([]);
   //
   const [addableTerrainKeys, setAddableTerrainKeys] = React.useState([]); // terrain to be created
@@ -266,10 +262,12 @@ function TerrainChunkManagerV4({ cameraRef, seed = 14659, width = 200, depth = 5
   const [keysCalculating, setKeysCalculating] = React.useState([]); // currently calculating
   const [keysRequired, setKeysRequired] = React.useState([]); // recalculated every time shouldIReCalculate is true
 
+  const { camera } = useThree();
+
   useFrame(() => {
     // calc current chunk position
-    const camX = cameraRef?.current?.position?.x;
-    const camZ = cameraRef?.current?.position?.z;
+    const camX = camera.position?.x;
+    const camZ = camera.position?.z;
     const pos = [Math.floor(camX / width), Math.floor(camZ / width)];
 
     const shouldIReCalculate = !lastCalculatedPosition.length || pos[0] !== lastCalculatedPosition[0] || pos[1] !== lastCalculatedPosition[1];
@@ -282,7 +280,7 @@ function TerrainChunkManagerV4({ cameraRef, seed = 14659, width = 200, depth = 5
       for(let i = 1; i < depth; i ++){
         const pow = 3 ** (i - 1);
         for(let j = 0; j < 8; j++){
-          keysReq.push(`${pos[0] + (ofsX[j] * pow)  + ((ofs[i - 1][j << 1]) / width)}*${pos[1] + (ofsY[j] * pow)  + ((ofs[i - 1][(j << 1) + 1]) / width)}_${pow}`);
+          keysReq.push(`${(pos[0] + (ofsX[j] * pow)  + ((ofs[i - 1][j << 1]) / width))}*${(pos[1] + (ofsY[j] * pow)  + ((ofs[i - 1][(j << 1) + 1]) / width))}_${pow}`);
         }
       }
       setKeysRequired(keysReq);
@@ -307,7 +305,9 @@ function TerrainChunkManagerV4({ cameraRef, seed = 14659, width = 200, depth = 5
 
         setVissableTerrain([...visibleTerrain, newChunk])
         setTerrainPool({...terrainPool, [k]: newChunk})
-      }else setVissableTerrain([...visibleTerrain, terrainPool[k]]);
+      } else if(!(Object.values(visibleTerrain).map(({key}) => key)).includes(k)) {
+        setVissableTerrain([...visibleTerrain, terrainPool[k]]);
+      }
 
       setAddableTerrainKeys([...addableTerrainKeys, k]);
       setKeysCalculating(keysCalculating.slice(1));
